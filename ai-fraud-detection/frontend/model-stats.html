@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ML Model Stats — AI Fraud Detection</title>
+  <meta name="description" content="ML model performance metrics: accuracy, F1, AUC-ROC, confusion matrix, feature importance"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .metrics-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-bottom:24px; }
+    .confusion-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+    .meta-chip {
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--bg-input);border:1px solid var(--border);
+      border-radius:100px;padding:5px 14px;font-size:12px;
+    }
+    .feature-table-section { overflow-x:auto; }
+    #featureImportanceChart { min-height:320px; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1>FraudGuard AI</h1>
+    <p>Detection Platform</p>
+  </div>
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <a href="dashboard.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      Dashboard
+    </a>
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      Transactions
+    </a>
+    <a href="add-transaction.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      Add Transaction
+    </a>
+    <div class="nav-section-label">Analytics</div>
+    <a href="model-stats.html" class="nav-item active">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+      ML Model Stats
+    </a>
+    <div class="nav-section-label">Filters</div>
+    <a href="index.html?filter=fraud" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      Fraud Cases
+    </a>
+    <a href="index.html?filter=safe" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+      Safe Transactions
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-outline w-full" style="margin-bottom:12px; font-size:12px; padding:8px 12px; display:flex; justify-content:center; gap:6px; border-color:var(--border)">
+      Light Mode
+    </button>
+    <div class="user-info">
+      <div class="user-avatar"></div>
+      <div>
+        <div class="user-name username-display">—</div>
+        <div class="user-role role-display badge" style="font-size:9px"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Logout">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <h1 class="page-title">ML Model Performance</h1>
+      <p class="page-subtitle">RandomForest + IsolationForest + SMOTE &middot; Real evaluation metrics</p>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary admin-only" id="retrainBtn">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Retrain Model
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Banner -->
+  <div class="alert alert-warning" id="statsError" style="display:none">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>Could not load model statistics. Is the ML service running?</span>
+  </div>
+
+  <!-- Model Meta Info -->
+  <div class="card fade-in" style="margin-bottom:20px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+      <div style="width:48px;height:48px;background:rgba(20,184,166,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" style="width:26px;height:26px;stroke:var(--accent-teal);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px">Model Information</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="meta-chip">v<span id="meta-version">—</span></span>
+          <span class="meta-chip"><span id="meta-algorithm">—</span></span>
+          <span class="meta-chip">Trained: <span id="meta-trained">—</span></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;text-align:center">
+        <div>
+          <div style="font-size:11px;color:var(--text-secondary)">Total Samples</div>
+          <div id="stat-total-samples" style="font-size:18px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-secondary)">Fraud Cases</div>
+          <div id="stat-fraud-cases" style="font-size:18px;font-weight:700;color:var(--accent-red)">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-secondary)">Train Set</div>
+          <div id="stat-train-samples" style="font-size:18px;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-secondary)">Test Set</div>
+          <div id="stat-test-samples" style="font-size:18px;font-weight:700">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="metrics-grid fade-in">
+    <div class="card" id="metric-accuracy"></div>
+    <div class="card" id="metric-precision"></div>
+    <div class="card" id="metric-recall"></div>
+    <div class="card" id="metric-f1"></div>
+    <div class="card" id="metric-aucroc"></div>
+  </div>
+
+  <!-- Confusion Matrix + Feature Importance Chart -->
+  <div class="confusion-grid fade-in">
+    <!-- Confusion Matrix -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Confusion Matrix
+      </div>
+      <div id="confusionMatrix">
+        <div class="flex-center" style="height:200px">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--bg-secondary);border-radius:10px;font-size:12px;color:var(--text-secondary)">
+        <strong style="color:var(--text-primary)">How to read:</strong>
+        Rows = Actual, Columns = Predicted.
+        High True Negative + True Positive = good model.
+        Low False Negative = fewer missed frauds.
+      </div>
+    </div>
+
+    <!-- Feature Importance Chart -->
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Feature Importance
+      </div>
+      <div style="position:relative;height:320px">
+        <canvas id="featureImportanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature Importance Table -->
+  <div class="card fade-in">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Feature Importance Details
+    </div>
+    <div class="feature-table-section">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Feature Name</th>
+            <th>Description</th>
+            <th>Importance Score</th>
+          </tr>
+        </thead>
+        <tbody id="featureTableBody">
+          <tr><td colspan="4" style="text-align:center;padding:40px">
+            <div class="spinner" style="margin:0 auto 12px"></div>Loading feature data…
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Explainability Notes -->
+  <div class="card fade-in" style="margin-top:0">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      How the Model Works
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+      <div style="background:var(--bg-secondary);padding:16px;border-radius:12px">
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(20,184,166,0.1);border-radius:8px">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M17 12h.01"/><path d="M7 12h.01"/><path d="M12 7v5l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Random Forest</div>
+        <div style="font-size:12px;color:var(--text-secondary)">100 decision trees vote on whether a transaction is fraudulent. Handles class imbalance with SMOTE oversampling.</div>
+      </div>
+      <div style="background:var(--bg-secondary);padding:16px;border-radius:12px">
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(14,165,233,0.1);border-radius:8px">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--accent-blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Isolation Forest</div>
+        <div style="font-size:12px;color:var(--text-secondary)">Anomaly detection layer that flags statistically unusual transactions independently of labels.</div>
+      </div>
+      <div style="background:var(--bg-secondary);padding:16px;border-radius:12px">
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(124,58,237,0.1);border-radius:8px">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--accent-purple);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13h3c2.66 0 5-1.79 5-4s-2.34-4-5-4H6"/><path d="M13 13l5 8"/></svg>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">SMOTE</div>
+        <div style="font-size:12px;color:var(--text-secondary)">Synthetic Minority Oversampling balances the 0.17% fraud rate so the model learns fraud patterns effectively.</div>
+      </div>
+      <div style="background:var(--bg-secondary);padding:16px;border-radius:12px">
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(245,158,11,0.1);border-radius:8px">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:var(--accent-yellow);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Combined Score</div>
+        <div style="font-size:12px;color:var(--text-secondary)">Final score = ML probability &times; 70 + Rule score &times; 30. Flagged as fraud if &ge; 40.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DATASET UPLOAD SECTION                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="card fade-in" style="margin-top:0">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Upload Training Dataset
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">
+      Upload your CSV or Excel dataset to retrain the fraud detection model.
+      Supports the <strong>Kaggle Credit Card Fraud</strong> format (<code>Amount, Class</code>) or
+      any custom format with <code>amount</code> + <code>label/isFraud</code> columns.
+    </p>
+
+    <!-- Current Dataset Info -->
+    <div id="datasetInfoPanel" style="
+      background:var(--bg-secondary);border:1px solid var(--border);
+      border-radius:12px;padding:16px;margin-bottom:20px">
+      <div class="flex-center" style="gap:10px;color:var(--text-secondary)">
+        <div class="spinner" style="width:18px;height:18px;border-width:2px"></div>
+        Checking dataset status…
+      </div>
+    </div>
+
+    <!-- Upload Dropzone -->
+    <div id="uploadDropzone" style="
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: var(--bg-secondary);
+      margin-bottom: 16px;
+    "
+    onmouseover="this.style.borderColor='#14b8a6';this.style.background='rgba(20,184,166,0.04)'"
+    onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-secondary)'">
+
+      <div style="margin-bottom:14px;display:flex;justify-content:center">
+        <svg viewBox="0 0 24 24" style="width:48px;height:48px;stroke:var(--accent-teal);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">
+        Drag &amp; drop your dataset here
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">
+        or click to browse &middot; Supports <strong>.csv</strong>, <strong>.xlsx</strong>, <strong>.xls</strong>
+      </div>
+
+      <!-- Accepted formats -->
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">
+        <span style="background:rgba(16,217,126,0.12);color:var(--accent-green);padding:4px 12px;border-radius:100px;font-size:12px;border:1px solid rgba(16,217,126,0.3)">
+          .CSV (Kaggle format)
+        </span>
+        <span style="background:rgba(14,165,233,0.12);color:var(--accent-blue);padding:4px 12px;border-radius:100px;font-size:12px;border:1px solid rgba(14,165,233,0.3)">
+          .XLSX Excel
+        </span>
+        <span style="background:rgba(124,58,237,0.12);color:var(--accent-purple);padding:4px 12px;border-radius:100px;font-size:12px;border:1px solid rgba(124,58,237,0.3)">
+          .XLS Excel 97-2003
+        </span>
+      </div>
+
+      <input type="file" id="datasetFileInput" accept=".csv,.xlsx,.xls" style="display:none"/>
+      <div class="btn btn-outline" style="pointer-events:none">Browse Files</div>
+    </div>
+
+    <!-- File Preview (shown after selection) -->
+    <div id="uploadPreview" style="margin-bottom:12px"></div>
+
+    <!-- Options Row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;padding:14px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Auto-Retrain Model</div>
+        <div style="font-size:12px;color:var(--text-secondary)">Automatically retrain after upload (recommended)</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="autoRetrainToggle" checked
+               style="width:18px;height:18px;accent-color:var(--accent-teal);cursor:pointer"/>
+        <span style="font-size:13px;font-weight:600;color:var(--accent-teal)">Enabled</span>
+      </label>
+    </div>
+
+    <!-- Progress & Status -->
+    <div id="uploadProgress" style="display:none;margin-bottom:12px">
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;background:linear-gradient(90deg,var(--accent-teal),var(--accent-blue));border-radius:2px;animation:progressPulse 1.5s ease-in-out infinite;width:100%"></div>
+      </div>
+    </div>
+    <div id="uploadStatusMsg" style="font-size:13px;min-height:20px;margin-bottom:12px"></div>
+
+    <!-- Upload Result Summary -->
+    <div id="uploadSummary" style="display:none;margin-bottom:16px"></div>
+
+    <!-- Format Guide -->
+    <details style="margin-top:4px">
+      <summary style="font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary);user-select:none">
+        Accepted Column Formats (click to expand)
+      </summary>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:var(--bg-secondary);padding:14px;border-radius:10px;border:1px solid rgba(16,217,126,0.2)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent-green);margin-bottom:8px">Kaggle Credit Card Format</div>
+          <code style="font-size:11px;color:var(--text-secondary);display:block;line-height:1.8">
+            Time, V1, V2 … V28,<br/>
+            <strong style="color:var(--accent-cyan)">Amount</strong>, <strong style="color:var(--accent-red)">Class</strong>
+          </code>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Class: 0 = safe, 1 = fraud</div>
+        </div>
+        <div style="background:var(--bg-secondary);padding:14px;border-radius:10px;border:1px solid rgba(14,165,233,0.2)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent-blue);margin-bottom:8px">Custom Format</div>
+          <code style="font-size:11px;color:var(--text-secondary);display:block;line-height:1.8">
+            <strong style="color:var(--accent-cyan)">amount</strong> or <strong style="color:var(--accent-cyan)">Amount</strong><br/>
+            <strong style="color:var(--accent-red)">label</strong> or <strong style="color:var(--accent-red)">isFraud</strong> or <strong style="color:var(--accent-red)">fraud</strong>
+          </code>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px">Any other columns are optional</div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+</main>
+
+<style>
+  @keyframes progressPulse {
+    0%   { opacity: 0.6; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+  #uploadDropzone.dragover {
+    border-color: #14b8a6 !important;
+    background: rgba(20,184,166,0.08) !important;
+    transform: scale(1.01);
+  }
+</style>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/model-stats.js"></script>
+</body>
+</html>

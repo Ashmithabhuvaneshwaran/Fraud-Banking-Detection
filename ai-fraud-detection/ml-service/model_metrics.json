@@ -1,0 +1,24 @@
+{
+  "accuracy": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "auc_roc": 1.0,
+  "confusion_matrix": [
+    [
+      1800,
+      0
+    ],
+    [
+      0,
+      200
+    ]
+  ],
+  "train_samples": 8000,
+  "test_samples": 2000,
+  "fraud_cases": 1000,
+  "total_samples": 10000,
+  "model_version": "2.0",
+  "algorithm": "RandomForest + IsolationForest + SMOTE",
+  "trained_at": "2026-07-14T19:19:12.019926"
+}

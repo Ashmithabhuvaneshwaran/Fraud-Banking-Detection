@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Transaction — AI Fraud Detection</title>
+  <meta name="description" content="Submit a new transaction for real-time ML fraud analysis"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* SVG Score Arc */
+    .score-arc-svg { display:block; margin:0 auto; }
+    #scoreArcFill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440;
+      transition: stroke-dashoffset 0.8s ease, stroke 0.4s ease;
+      transform-origin: center;
+      transform: rotate(-90deg);
+    }
+    #scoreArcBg { fill:none; stroke: var(--border); stroke-width:10; }
+
+    .preview-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: sticky; top: 20px;
+    }
+    .explanation-item {
+      margin-bottom: 14px;
+      animation: fadeIn 0.4s ease;
+    }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width:768px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .page-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
+    @media (max-width:1100px) { .page-layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1>FraudGuard AI</h1>
+    <p>Detection Platform</p>
+  </div>
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <a href="dashboard.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      Dashboard
+    </a>
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      Transactions
+    </a>
+    <a href="add-transaction.html" class="nav-item active">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      Add Transaction
+    </a>
+    <div class="nav-section-label">Analytics</div>
+    <a href="model-stats.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+      ML Model Stats
+    </a>
+    <div class="nav-section-label">Filters</div>
+    <a href="index.html?filter=fraud" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      Fraud Cases
+    </a>
+    <a href="index.html?filter=safe" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+      Safe Transactions
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-outline w-full" style="margin-bottom:12px; font-size:12px; padding:8px 12px; display:flex; justify-content:center; gap:6px; border-color:var(--border)">
+      Light Mode
+    </button>
+    <div class="user-info">
+      <div class="user-avatar"></div>
+      <div>
+        <div class="user-name username-display">—</div>
+        <div class="user-role role-display badge" style="font-size:9px"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Logout">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+  <div class="topbar">
+    <div>
+      <h1 class="page-title">Add Transaction</h1>
+      <p class="page-subtitle">Submit a transaction for real-time ML fraud analysis</p>
+    </div>
+  </div>
+
+  <div class="page-layout">
+    <!-- LEFT: Form -->
+    <div class="card">
+      <form id="addTxnForm">
+
+        <!-- Transaction Info -->
+        <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Transaction Details
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="transactionId">Transaction ID</label>
+            <input type="text" id="transactionId" class="form-control" placeholder="Auto-generated" readonly
+                   style="background:var(--bg-secondary);cursor:not-allowed;color:var(--accent-cyan)"/>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="sender">Sender Account</label>
+              <input type="text" id="sender" class="form-control" placeholder="e.g. ACC001234" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="receiver">Receiver Account</label>
+              <input type="text" id="receiver" class="form-control" placeholder="e.g. ACC005678" required/>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="amount">Amount (&#8377;)</label>
+              <input type="number" id="amount" class="form-control" placeholder="0.00"
+                     min="1" step="0.01" required/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="transactionType">Transaction Type</label>
+              <select id="transactionType" class="form-control">
+                <option value="UPI">UPI</option>
+                <option value="NEFT">NEFT</option>
+                <option value="RTGS">RTGS</option>
+                <option value="IMPS">IMPS</option>
+                <option value="CARD">Card</option>
+                <option value="ATM">ATM</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="location">Location</label>
+              <input type="text" id="location" class="form-control" placeholder="e.g. Delhi"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ipAddress">IP Address</label>
+              <input type="text" id="ipAddress" class="form-control" placeholder="e.g. 192.168.1.1"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Signals -->
+        <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-yellow);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Risk Signals
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="hour">Transaction Hour (0&ndash;23)</label>
+              <input type="number" id="hour" class="form-control" min="0" max="23"
+                     placeholder="e.g. 2 (2 AM)" value="12"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="loginAttempts">Login Attempts</label>
+              <input type="number" id="loginAttempts" class="form-control" min="1" max="20"
+                     placeholder="e.g. 5" value="1"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="accountAge">Account Age (months)</label>
+              <input type="number" id="accountAge" class="form-control" min="0"
+                     placeholder="e.g. 2" value="12"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="device">Device</label>
+              <select id="device" class="form-control">
+                <option value="Known">Known Device</option>
+                <option value="New">New Device</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="submitTxnBtn" style="padding:14px">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Submit &amp; Analyse
+        </button>
+      </form>
+    </div>
+
+    <!-- RIGHT: ML Preview -->
+    <div class="preview-card" id="mlPreviewSection" style="display:none">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Real-Time ML Preview
+      </div>
+
+      <!-- Score Arc -->
+      <div style="text-align:center;margin-bottom:20px">
+        <svg class="score-arc-svg" width="160" height="160" viewBox="0 0 160 160">
+          <circle id="scoreArcBg"  cx="80" cy="80" r="70"/>
+          <circle id="scoreArcFill" cx="80" cy="80" r="70"/>
+        </svg>
+        <div style="margin-top:-130px;padding-bottom:90px">
+          <div id="preview-score" style="font-size:42px;font-weight:800;line-height:1">0</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Fraud Score</div>
+        </div>
+        <div style="margin-top:8px">
+          <div id="preview-status"></div>
+          <div style="margin-top:6px;font-size:13px;color:var(--text-secondary)">
+            Probability: <strong id="preview-pct" style="color:var(--text-primary)">—</strong>
+            &middot; <strong id="preview-conf" style="color:var(--accent-yellow)">—</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explanation -->
+      <div style="border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">
+          Top Risk Factors
+        </div>
+        <div id="preview-reasons">
+          <div style="color:var(--text-muted);font-size:13px">Enter transaction details to see ML analysis…</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:10px;background:rgba(20,184,166,0.06);border-radius:8px;border:1px solid rgba(20,184,166,0.15)">
+        <div style="font-size:11px;color:#5eead4">
+          Live preview from the ML model. Final score = ML (70%) + Rules (30%).
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder when no preview -->
+    <div id="previewPlaceholder" class="preview-card" style="text-align:center;padding:40px">
+      <div style="margin-bottom:16px;display:flex;justify-content:center">
+        <svg viewBox="0 0 24 24" style="width:48px;height:48px;stroke:var(--accent-teal);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">ML Preview</div>
+      <div style="font-size:13px;color:var(--text-secondary)">
+        Start filling the form and the AI model will predict fraud probability in real-time.
+      </div>
+      <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg-input);padding:12px;border-radius:10px">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--accent-blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <div style="text-align:left;font-size:12px">
+            <div style="font-weight:600">Night Transactions</div>
+            <div style="color:var(--text-muted)">Hours 0–5 AM are high risk</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg-input);padding:12px;border-radius:10px">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--accent-teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13h3c2.66 0 5-1.79 5-4s-2.34-4-5-4H6"/><path d="M13 13l5 8"/></svg>
+          <div style="text-align:left;font-size:12px">
+            <div style="font-weight:600">Large Amounts</div>
+            <div style="color:var(--text-muted)">&#8377;50,000+ increases risk score</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg-input);padding:12px;border-radius:10px">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--accent-yellow);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <div style="text-align:left;font-size:12px">
+            <div style="font-weight:600">Multiple Login Attempts</div>
+            <div style="color:var(--text-muted)">3+ attempts = suspicious</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Result Modal -->
+<div id="resultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+  <div class="card" style="max-width:520px;width:90%;position:relative;padding:36px;border-radius:20px;animation:fadeIn 0.3s ease">
+    <button onclick="closeResultModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-secondary);font-size:22px;cursor:pointer">&times;</button>
+    <h2 style="margin-bottom:6px;font-size:20px">Analysis Complete</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px">ML + Rule-based fraud analysis result</p>
+    <div id="result-status" style="margin-bottom:20px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:var(--bg-secondary);padding:14px;border-radius:10px;text-align:center">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">FRAUD SCORE</div>
+        <div id="result-score" style="font-size:26px;font-weight:800"></div>
+      </div>
+      <div style="background:var(--bg-secondary);padding:14px;border-radius:10px;text-align:center">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">METHOD</div>
+        <div id="result-method" style="font-size:13px;font-weight:600;margin-top:4px"></div>
+      </div>
+      <div style="background:var(--bg-secondary);padding:14px;border-radius:10px;text-align:center">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">TRANSACTION</div>
+        <div id="result-txn-id" style="font-size:11px;font-weight:600;color:var(--accent-cyan);margin-top:4px;word-break:break-all"></div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Why flagged?</div>
+    <ul id="result-reasons" style="list-style:none;padding:0;margin-bottom:20px"></ul>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeResultModal()" class="btn btn-outline" style="flex:1">Close</button>
+      <a href="index.html" class="btn btn-primary" style="flex:1;text-align:center">View All Transactions</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/transaction.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initAddTransaction();
+
+    // Show/hide preview panels
+    const form = document.getElementById('addTxnForm');
+    form.addEventListener('input', () => {
+      const amount = document.getElementById('amount')?.value;
+      if (amount > 0) {
+        document.getElementById('mlPreviewSection').style.display = 'block';
+        document.getElementById('previewPlaceholder').style.display = 'none';
+      }
+    });
+  });
+</script>
+</body>
+</html>

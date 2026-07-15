@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — AI Fraud Detection</title>
+  <meta name="description" content="Real-time fraud detection dashboard with ML insights and analytics"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1>FraudGuard AI</h1>
+    <p>Detection Platform</p>
+  </div>
+
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <a href="dashboard.html" class="nav-item active">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      Dashboard
+    </a>
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      Transactions
+    </a>
+    <a href="add-transaction.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      Add Transaction
+    </a>
+
+    <div class="nav-section-label admin-only">Analytics</div>
+    <a href="model-stats.html" class="nav-item admin-only">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+      ML Model Stats
+    </a>
+
+    <div class="nav-section-label">Filters</div>
+    <a href="index.html?filter=fraud" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      Fraud Cases
+    </a>
+    <a href="index.html?filter=safe" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+      Safe Transactions
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-outline w-full" style="margin-bottom:12px; font-size:12px; padding:8px 12px; display:flex; justify-content:center; gap:6px; border-color:var(--border)">
+      Light Mode
+    </button>
+    <div class="user-info">
+      <div class="user-avatar"></div>
+      <div>
+        <div class="user-name username-display">—</div>
+        <div class="user-role role-display badge" style="font-size:9px"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Logout">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Real-time fraud detection overview</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="refresh-badge" id="refreshBadge">
+        <span class="live-dot"></span> Live &middot; refreshes every 5s
+      </div>
+      <a href="add-transaction.html" class="btn btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add Transaction
+      </a>
+    </div>
+  </div>
+
+  <!-- ML Accuracy Widget -->
+  <div class="ml-accuracy-card fade-in admin-only">
+    <div class="ml-accuracy-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    </div>
+    <div>
+      <div class="ml-accuracy-title">ML MODEL ACCURACY</div>
+      <div class="ml-accuracy-value" id="ml-accuracy">—</div>
+      <div class="ml-accuracy-sub" id="ml-algorithm">Loading model info…</div>
+      <div class="ml-accuracy-sub text-xs" style="margin-top:4px">
+        v<span id="ml-version">—</span> &middot; Trained: <span id="ml-trained">—</span>
+      </div>
+    </div>
+    <div class="ml-metrics-row">
+      <div class="ml-metric">
+        <div class="ml-metric-val" id="ml-f1" style="color:var(--accent-yellow)">—</div>
+        <div class="ml-metric-label">F1 Score</div>
+      </div>
+      <div class="ml-metric">
+        <div class="ml-metric-val" id="ml-recall" style="color:var(--accent-teal)">—</div>
+        <div class="ml-metric-label">Recall</div>
+      </div>
+      <div class="ml-metric">
+        <div class="ml-metric-val" id="ml-aucroc" style="color:var(--accent-purple)">—</div>
+        <div class="ml-metric-label">AUC-ROC</div>
+      </div>
+    </div>
+    <a href="model-stats.html" class="btn btn-outline btn-sm" style="margin-left:auto">View Details &rarr;</a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="stat-grid fade-in">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Transactions</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-change up">All time</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Fraud Detected</div>
+        <div class="stat-value text-fraud" id="stat-fraud">—</div>
+        <div class="stat-change down">High priority</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Safe Transactions</div>
+        <div class="stat-value text-safe" id="stat-safe">—</div>
+        <div class="stat-change up">Normal</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon yellow">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Fraud Rate</div>
+        <div class="stat-value" id="stat-pct" style="color:var(--accent-yellow)">—</div>
+        <div class="stat-change">of all transactions</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon teal">
+        <svg viewBox="0 0 24 24"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13h3c2.66 0 5-1.79 5-4s-2.34-4-5-4H6"/><path d="M13 13l5 8"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Total Volume</div>
+        <div class="stat-value" id="stat-amount" style="font-size:18px;margin-top:4px">—</div>
+        <div class="stat-change">Transacted value</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div>
+        <div class="stat-label">Fraud Amount</div>
+        <div class="stat-value text-fraud" id="stat-famount" style="font-size:18px;margin-top:4px">—</div>
+        <div class="stat-change down">At risk</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="charts-grid">
+    <!-- Doughnut -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>
+            Fraud Distribution
+          </div>
+          <div class="chart-subtitle">Safe vs Fraudulent transactions</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrapper">
+        <canvas id="fraudDoughnutChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Bar -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Daily Activity
+          </div>
+          <div class="chart-subtitle">Transactions per day (last 7 days)</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrapper">
+        <canvas id="dailyBarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Line (full width) -->
+    <div class="chart-card chart-card-wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Fraud Trend
+          </div>
+          <div class="chart-subtitle">Fraud cases over the last 7 days</div>
+        </div>
+        <span class="badge badge-fraud">Live</span>
+      </div>
+      <div class="chart-canvas-wrapper" style="height:180px">
+        <canvas id="trendLineChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions Table -->
+  <div class="recent-table-section fade-in">
+    <div class="section-header">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Recent Transactions
+      </div>
+      <a href="index.html" class="btn btn-outline btn-sm">View All &rarr;</a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Transaction ID</th>
+          <th>Sender</th>
+          <th>Amount</th>
+          <th>ML Score</th>
+          <th>Status</th>
+          <th>Confidence</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="recentTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">
+          <div class="spinner" style="margin:0 auto 12px"></div>Loading…
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

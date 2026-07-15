@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transactions — AI Fraud Detection</title>
+  <meta name="description" content="Full transaction table with search, filter, ML scores, and CSV export"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1>FraudGuard AI</h1>
+    <p>Detection Platform</p>
+  </div>
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <a href="dashboard.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+      Dashboard
+    </a>
+    <a href="index.html" class="nav-item active">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      Transactions
+    </a>
+    <a href="add-transaction.html" class="nav-item">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      Add Transaction
+    </a>
+    <div class="nav-section-label admin-only">Analytics</div>
+    <a href="model-stats.html" class="nav-item admin-only">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+      ML Model Stats
+    </a>
+    <div class="nav-section-label">Filters</div>
+    <a href="index.html?filter=fraud" class="nav-item nav-filter-fraud">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </span>
+      Fraud Cases
+    </a>
+    <a href="index.html?filter=safe" class="nav-item nav-filter-safe">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </span>
+      Safe Transactions
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button id="themeToggleBtn" onclick="toggleTheme()" class="btn btn-outline w-full" style="margin-bottom:12px; font-size:12px; padding:8px 12px; display:flex; justify-content:center; gap:6px; border-color:var(--border)">
+      Light Mode
+    </button>
+    <div class="user-info">
+      <div class="user-avatar"></div>
+      <div>
+        <div class="user-name username-display">—</div>
+        <div class="user-role role-display badge" style="font-size:9px"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Logout">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <h1 class="page-title">All Transactions</h1>
+      <p class="page-subtitle">
+        <span id="count-total">—</span> total &middot;
+        <span id="count-fraud" class="text-fraud">—</span> fraud &middot;
+        <span id="count-safe"  class="text-safe">—</span> safe
+      </p>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" id="exportBtn">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <a href="add-transaction.html" class="btn btn-primary">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add Transaction
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-wrapper">
+      <span class="search-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search by ID, sender, receiver, location…"/>
+    </div>
+    <select class="filter-select" id="statusFilter">
+      <option value="all">All Status</option>
+      <option value="fraud">Fraud Only</option>
+      <option value="safe">Safe Only</option>
+    </select>
+    <select class="filter-select" id="confidenceFilter">
+      <option value="all">All Confidence</option>
+      <option value="HIGH">HIGH Risk</option>
+      <option value="MEDIUM">MEDIUM Risk</option>
+      <option value="LOW">LOW Risk</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="card" style="padding:0">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Sender / Location</th>
+            <th>Receiver</th>
+            <th>Amount</th>
+            <th>ML Score</th>
+            <th>Status</th>
+            <th>Reasons</th>
+            <th>Method</th>
+            <th>Date</th>
+            <th class="admin-only">Action</th>
+          </tr>
+        </thead>
+        <tbody id="txnTableBody"></tbody>
+      </table>
+    </div>
+    <div id="pagination" class="pagination"></div>
+  </div>
+</main>
+
+<!-- Result Modal -->
+<div id="resultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:32px;max-width:480px;width:90%;position:relative">
+    <button onclick="closeResultModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">&times;</button>
+    <h2 style="margin-bottom:20px;font-size:18px">Transaction Result</h2>
+    <div id="result-status" style="margin-bottom:16px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div><div style="font-size:11px;color:var(--text-secondary)">Transaction ID</div><div id="result-txn-id" style="font-size:13px;font-weight:600"></div></div>
+      <div><div style="font-size:11px;color:var(--text-secondary)">Fraud Score</div><div id="result-score" style="font-size:24px;font-weight:800"></div></div>
+      <div><div style="font-size:11px;color:var(--text-secondary)">Detection Method</div><div id="result-method" style="font-size:13px;font-weight:600"></div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-weight:600">RISK FACTORS</div>
+    <ul id="result-reasons" style="list-style:none;padding:0"></ul>
+    <button onclick="closeResultModal()" class="btn btn-primary w-full" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/transaction.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initTransactionList();
+
+    // Handle URL filter params — set dropdown AND re-apply filter
+    const params = new URLSearchParams(location.search);
+    const filter = params.get('filter');
+    if (filter) {
+      const sel = document.getElementById('statusFilter');
+      if (sel) {
+        sel.value = filter;
+        applyFilters(); // actually re-render the table with the filter
+      }
+
+      // Highlight the active filter nav item
+      document.querySelectorAll('.nav-filter-fraud, .nav-filter-safe').forEach(el => {
+        el.classList.remove('active');
+      });
+      const activeLink = document.querySelector(`.nav-filter-${filter}`);
+      if (activeLink) activeLink.classList.add('active');
+    }
+  });
+</script>
+</body>
+</html>

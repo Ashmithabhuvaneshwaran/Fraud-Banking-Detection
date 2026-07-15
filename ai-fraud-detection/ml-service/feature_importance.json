@@ -1,0 +1,42 @@
+[
+  {
+    "feature": "loginAttempts",
+    "importance": 0.299,
+    "description": "Multiple Login Attempts"
+  },
+  {
+    "feature": "isNight",
+    "importance": 0.2209,
+    "description": "Night Transaction"
+  },
+  {
+    "feature": "accountAge",
+    "importance": 0.2126,
+    "description": "New Account"
+  },
+  {
+    "feature": "isNewDevice",
+    "importance": 0.129,
+    "description": "New Device Used"
+  },
+  {
+    "feature": "amount_zscore",
+    "importance": 0.0729,
+    "description": "Abnormal Amount Pattern"
+  },
+  {
+    "feature": "amount",
+    "importance": 0.0533,
+    "description": "High Transaction Amount"
+  },
+  {
+    "feature": "amount_log",
+    "importance": 0.0075,
+    "description": "Log-Scaled Amount"
+  },
+  {
+    "feature": "hour",
+    "importance": 0.0048,
+    "description": "Unusual Transaction Hour"
+  }
+]
